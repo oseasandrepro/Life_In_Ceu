@@ -1,139 +1,120 @@
-export [
-    WINDOW-HIGHT,
-    WINDOW-WIDTH,
-    BOARD-WIDTH,
-    BOARD-HIGHT,
-    LIVE-CELL-COLOR,
-    DEAD-CELL-COLOR,
-    LIVE-TO-DEAD-CELL-COLOR,
-    CELL-STATE,
-]{
-    data :RGBO = [a,b,c,d]
+data :RGBO = [a,b,c,d]
 
-    val WINDOW-HIGHT = 61
-    val WINDOW-WIDTH = 61
+val WINDOW-HIGHT = 61
+val WINDOW-WIDTH = 61
 
-    val BOARD-HIGHT = WINDOW-HIGHT-10
-    val BOARD-WIDTH = WINDOW-WIDTH-10
+val BOARD-HIGHT = WINDOW-HIGHT-10
+val BOARD-WIDTH = WINDOW-WIDTH-10
 
-    val LIVE-CELL-COLOR :RGBO = [0,0,0,255]
-    val DEAD-CELL-COLOR :RGBO = [255,255,255,255]
-    val LIVE-TO-DEAD-CELL-COLOR :RGBO = [3, 98, 252,255]
+val LIVE-CELL-COLOR :RGBO = [0,0,0,255]
+val DEAD-CELL-COLOR :RGBO = [255,255,255,255]
+val LIVE-TO-DEAD-CELL-COLOR :RGBO = [3, 98, 252,255]
 
-    var CELL-STATE = #[]
+var CELL-STATE = #[]
+
+func is-valid-coordinate? (coord :XY)
+{    
+not
+(    ((coord.x < -most-extreme-x-coordinate) or (coord.x > most-extreme-x-coordinate)) or 
+    ((coord.y < -most-extreme-x-coordinate) or (coord.y > most-extreme-x-coordinate)) 
+)
+where
+{
+    val most-extreme-x-coordinate = math-floor(WINDOW-WIDTH/2)
+    val most-extreme-y-coordinate = math-floor(WINDOW-HIGHT/2)
+}
 }
 
-export [
-    set-new-generation,
-    set-cells,
-    draw-board,
-    set-cell
-]{
+func coordinate-to-index (coord:XY)
+{
+val i = coord.x - (-math-floor(WINDOW-WIDTH/2))
+val j = coord.y - (-math-floor(WINDOW-HIGHT/2))
 
-    func is-valid-coordinate? (coord :XY)
-    {	
-        not
-        (	((coord.x < -most-extreme-x-coordinate) or (coord.x > most-extreme-x-coordinate)) or 
-            ((coord.y < -most-extreme-x-coordinate) or (coord.y > most-extreme-x-coordinate)) 
-        )
-        where
-        {
-            val most-extreme-x-coordinate = math-floor(WINDOW-WIDTH/2)
-            val most-extreme-y-coordinate = math-floor(WINDOW-HIGHT/2)
-        }
+(i * WINDOW-WIDTH) + j
+}
+
+
+func count-live-cells-around (pos:XY)
+{
+var cont = 0
+
+var Neighbors = #[  [pos.x,pos.y+1], [pos.x+1,pos.y+1], [pos.x+1,pos.y], [pos.x+1,pos.y-1],
+            [pos.x,pos.y-1], [pos.x-1,pos.y-1], [pos.x-1,pos.y], [pos.x-1,pos.y+1] 
+        ]
+    
+loop v:XY in Neighbors
+{
+    val index = coordinate-to-index([v.x, v.y])
+    if(is-valid-coordinate?(v) and (CELL-STATE[index] == 1) )
+    {  
+    set cont = cont + 1 
     }
+}
 
-    func coordinate-to-index (coord:XY)
+cont
+}
+
+func set-new-generation()
+{    
+var auxvet = #[]
+
+var most-extreme-x-coordinate = math-floor(WINDOW-WIDTH/2)
+var most-extreme-y-coordinate = math-floor(WINDOW-HIGHT/2)
+    
+loop x in {-most-extreme-x-coordinate => (-most-extreme-x-coordinate+WINDOW-WIDTH) {
+{
+    loop y in {-most-extreme-x-coordinate => (-most-extreme-y-coordinate+WINDOW-HIGHT) {
     {
-        val i = coord.x - (-math-floor(WINDOW-WIDTH/2))
-        val j = coord.y - (-math-floor(WINDOW-HIGHT/2))
-        
-        (i * WINDOW-WIDTH) + j
-    }
-
-
-    func count-live-cells-around (pos:XY)
-    {
-        var cont = 0
-        
-        var Neighbors = #[  [pos.x,pos.y+1], [pos.x+1,pos.y+1], [pos.x+1,pos.y], [pos.x+1,pos.y-1],
-                            [pos.x,pos.y-1], [pos.x-1,pos.y-1], [pos.x-1,pos.y], [pos.x-1,pos.y+1] 
-                        ]
-                
-        loop in iter(Neighbors), v:XY 
-        {
-            val index = coordinate-to-index([v.x, v.y])
-            if(is-valid-coordinate?(v) and (CELL-STATE[index] == 1) )
-            {  
-                set cont = cont + 1 
-            }
-        }
-        
-        cont
-    }
-
-    func set-new-generation()
-    {	
-        var auxvet = #[]
-
-        var most-extreme-x-coordinate = math-floor(WINDOW-WIDTH/2)
-        var most-extreme-y-coordinate = math-floor(WINDOW-HIGHT/2)
-            
-        loop in [-most-extreme-x-coordinate -> (-most-extreme-x-coordinate+WINDOW-WIDTH) ), x 
-        {
-            loop in [-most-extreme-x-coordinate -> (-most-extreme-y-coordinate+WINDOW-HIGHT) ), y 
+    val index = coordinate-to-index([x,y])
+    val number-of-live-cells-around = count-live-cells-around([x,y])
+    set auxvet[+] = ifs 
             {
-                val index = coordinate-to-index([x,y])
-                val number-of-live-cells-around = count-live-cells-around([x,y])
-                set auxvet[+] = ifs 
-                                {
-                                    (CELL-STATE[index] == 1) and (number-of-live-cells-around < 2) -> 2
-                                    (CELL-STATE[index] == 1) and ((number-of-live-cells-around == 2) or (number-of-live-cells-around == 3)) -> 1
-                                    (CELL-STATE[index] == 1) and (number-of-live-cells-around > 3) -> 2
-                                    ((CELL-STATE[index] == 0) or (CELL-STATE[index] == 2) ) and (number-of-live-cells-around == 3) -> 1
-                                    else -> CELL-STATE[index]
-                                }
-                
+                (CELL-STATE[index] == 1) and (number-of-live-cells-around < 2) => 2
+                (CELL-STATE[index] == 1) and ((number-of-live-cells-around == 2) or (number-of-live-cells-around == 3)) => 1
+                (CELL-STATE[index] == 1) and (number-of-live-cells-around > 3) => 2
+                ((CELL-STATE[index] == 0) or (CELL-STATE[index] == 2) ) and (number-of-live-cells-around == 3) => 1
+                else => CELL-STATE[index]
             }
-        }
-        set CELL-STATE = move(auxvet)
+    
     }
+}
+set CELL-STATE = auxvet
+}
 
-    func set-cells ()
+func set-cells ()
+{
+loop in {0 => (WINDOW-HIGHT*WINDOW-WIDTH){
+{
+    set CELL-STATE[+] = 0
+    
+}
+}
+
+func draw-board ()
+{
+
+var most-extreme-x-coordinate = math-floor(BOARD-WIDTH/2)
+var most-extreme-y-coordinate = math-floor(BOARD-HIGHT/2)
+
+loop x in {-most-extreme-x-coordinate => (-most-extreme-x-coordinate+BOARD-WIDTH) {
+{
+    loop y in {-most-extreme-y-coordinate => (-most-extreme-y-coordinate+BOARD-HIGHT) {
     {
-        loop in [0 -> (WINDOW-HIGHT*WINDOW-WIDTH) ) 
-        {
-            set CELL-STATE[+] = 0
-            
-        }
-    }
-
-    func draw-board ()
+    
+    val index = coordinate-to-index([x,y])
+    ifs 
     {
-
-        var most-extreme-x-coordinate = math-floor(BOARD-WIDTH/2)
-        var most-extreme-y-coordinate = math-floor(BOARD-HIGHT/2)
-
-        loop in [-most-extreme-x-coordinate -> (-most-extreme-x-coordinate+BOARD-WIDTH) ), x 
-        {
-            loop in [-most-extreme-y-coordinate -> (-most-extreme-y-coordinate+BOARD-HIGHT) ), y 
-            {
-                
-                val index = coordinate-to-index([x,y])
-                ifs 
-                {
-                    CELL-STATE[index] == 0 -> pico-state-set-color-draw(DEAD-CELL-COLOR)
-                    CELL-STATE[index] == 1 -> pico-state-set-color-draw(LIVE-CELL-COLOR)
-                    CELL-STATE[index] == 2 -> pico-state-set-color-draw(LIVE-TO-DEAD-CELL-COLOR)
-                }
-                pico-output-draw-pixel( [x,y] )		
-            }
-        }
+        CELL-STATE[index] == 0 => pico-state-set-color-draw(DEAD-CELL-COLOR)
+        CELL-STATE[index] == 1 => pico-state-set-color-draw(LIVE-CELL-COLOR)
+        CELL-STATE[index] == 2 => pico-state-set-color-draw(LIVE-TO-DEAD-CELL-COLOR)
     }
-
-    func set-cell(coord :XY, value)
-    {
-        var index = coordinate-to-index([coord.x,coord.y])
-        set CELL-STATE[index] = value
+    pico-output-draw-pixel( [x,y] )        
     }
+}
+}
+
+func set-cell(coord :XY, value)
+{
+var index = coordinate-to-index([coord.x,coord.y])
+set CELL-STATE[index] = value
 }

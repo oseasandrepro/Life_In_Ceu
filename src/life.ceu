@@ -10,13 +10,13 @@ set-cells()
 
 spawn
 {
-		awaiting 1:s 
+        watching :1:s 
       {
-			every :Pico.Draw 
+            every :Pico.Draw 
          {
-				pico-output-draw-text([0,0], "Life")
-	      } 
-		}
+                pico-output-draw-text([0,0], "Life")
+          } 
+        }
 
       spawn
       {
@@ -26,30 +26,31 @@ spawn
          }
       }
 
-		awaiting :Pico.Key.Dn, (evt.key == :Key-S) 
-		{
+        watching :Pico.Key.Dn, (it.key == :Key-S) 
+        {
          var mouse-position :XY = [0,0]
          loop 
          {
-            await :Pico.Mouse.Button.Dn
-            set mouse-position = [evt.pos.x,evt.pos.y]
-            ifs evt.but 
-            {
-               == :Mouse-Button-Left   -> set-cell(mouse-position, 1)
-               == :Mouse-Button-Right  -> set-cell(mouse-position, 0)
+            await :Pico.Mouse.Button.Dn {
+                set mouse-position = [it.pos.x,it.pos.y]
+                ifs it.but 
+                {
+                   == :Mouse-Button-Left   => set-cell(mouse-position, 1)
+                   == :Mouse-Button-Right  => set-cell(mouse-position, 0)
+                }
             }
          }
        }
-        	
-		awaiting :Pico.Key.Dn, (evt.key == :Key-Q) 
-		{
-         every 500:ms
+            
+        watching :Pico.Key.Dn, (it.key == :Key-Q) 
+        {
+         every :500:ms
          {
             set-new-generation()
          }
       }
-        	
-		pico-quit()	
+            
+        pico-quit()    
 }
 
 pico-loop()
